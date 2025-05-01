@@ -31,6 +31,23 @@ PRODUCT_SET_DEBUGFS_RESTRICTIONS := true
 PRODUCT_PACKAGES += \
     fstab.qcom \
     fstab.qcom.vendor_ramdisk \
+    init.class_main.sh \
+    init.mdm.sh \
+    init.qcom.early_boot.sh \
+    init.qcom.post_boot.sh \
+    init.qcom.rc \
+    init.qcom.sh \
+    init.recovery.qcom.rc \
+    init.recovery.samsung.rc \
+    init.samsung.bsp.rc \
+    init.samsung.connector.rc \
+    init.samsung.display.rc \
+    init.samsung.dp.rc \
+    init.samsung.power.rc \
+    init.samsung.rc \
+    init.target.rc \
+    ueventd.odm.rc \
+    ueventd.qcom.rc
 
 # Partitions
 PRODUCT_PACKAGES += \
