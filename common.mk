@@ -21,12 +21,12 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/non_ab_device.mk)
 $(call inherit-product, frameworks/native/build/phone-xhdpi-6144-dalvik-heap.mk)
 
 # API levels
-BOARD_SHIPPING_API_LEVEL := 34
+BOARD_SHIPPING_API_LEVEL := 31
 PRODUCT_SHIPPING_API_LEVEL := $(BOARD_SHIPPING_API_LEVEL)
 
 # Audio
 PRODUCT_PACKAGES += \
-    android.hardware.audio@7.1-impl.samsung-sm8650 \
+    android.hardware.audio@7.1-impl.samsung-sm8450 \
     android.hardware.audio.effect@7.0-impl \
     android.hardware.audio.service \
     android.hardware.bluetooth.audio-impl \
@@ -46,20 +46,20 @@ PRODUCT_PACKAGES += \
     libqcomvisualizer \
     libqcomvoiceprocessing \
     libvolumelistener \
-    sound_trigger.primary.pineapple \
+    sound_trigger.primary.taro \
     vendor.qti.audio-adsprpc-service.rc \
     vendor.qti.hardware.AGMIPC@1.0-impl
 
-AUDIO_HAL_DIR := hardware/qcom-caf/sm8650/audio/primary-hal
-AUDIO_PAL_DIR := hardware/qcom-caf/sm8650/audio/pal
+AUDIO_HAL_DIR := hardware/qcom-caf/sm8450/audio/primary-hal
+AUDIO_PAL_DIR := hardware/qcom-caf/sm8450/audio/pal
 
 PRODUCT_COPY_FILES += \
     $(AUDIO_HAL_DIR)/configs/common/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml \
-    $(AUDIO_HAL_DIR)/configs/pineapple/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_pineapple/audio_effects.conf \
-    $(AUDIO_HAL_DIR)/configs/pineapple/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_pineapple/audio_effects.xml \
-    $(AUDIO_HAL_DIR)/configs/pineapple/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
-    $(AUDIO_PAL_DIR)/configs/pineapple/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
-    $(LOCAL_PATH)/audio/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_pineapple/audio_policy_configuration.xml \
+    $(AUDIO_HAL_DIR)/configs/taro/audio_effects.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_taro/audio_effects.conf \
+    $(AUDIO_HAL_DIR)/configs/taro/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_taro/audio_effects.xml \
+    $(AUDIO_HAL_DIR)/configs/taro/microphone_characteristics.xml:$(TARGET_COPY_OUT_VENDOR)/etc/microphone_characteristics.xml \
+    $(AUDIO_PAL_DIR)/configs/taro/Hapticsconfig.xml:$(TARGET_COPY_OUT_VENDOR)/etc/Hapticsconfig.xml \
+    $(LOCAL_PATH)/audio/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio/sku_taro/audio_policy_configuration.xml \
     $(LOCAL_PATH)/audio/audio_policy_volumes.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_volumes.xml \
     $(LOCAL_PATH)/audio/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml \
 
@@ -263,8 +263,8 @@ PRODUCT_COPY_FILES += \
 PRODUCT_SOONG_NAMESPACES += \
     $(LOCAL_PATH) \
     hardware/samsung \
-    kernel/samsung/sm8650 \
-    kernel/samsung/sm8650-modules
+    kernel/samsung/sm8475 \
+    kernel/samsung/sm8475-modules
 
 # Telephony
 PRODUCT_PACKAGES += \
@@ -332,4 +332,4 @@ PRODUCT_PACKAGES += \
     firmware_WCNSS_qcom_cfg.ini_symlink
 
 # Inherit the proprietary files
-$(call inherit-product, vendor/samsung/sm8650-common/sm8650-common-vendor.mk)
+$(call inherit-product, vendor/samsung/sm8475-common/sm8475-common-vendor.mk)

@@ -20,8 +20,8 @@ from extract_utils.main import (
 )
 
 namespace_imports = [
-    'device/samsung/sm8650-common',
-    'hardware/qcom-caf/sm8650',
+    'device/samsung/sm8475-common',
+    'hardware/qcom-caf/sm8450',
     'hardware/qcom-caf/wlan',
     'hardware/samsung',
     'vendor/qcom/opensource/commonsys/display',
@@ -64,7 +64,7 @@ blob_fixups: blob_fixups_user_type = {
 }
 
 module = ExtractUtilsModule(
-    'sm8650-common',
+    'sm8475-common',
     'samsung',
     blob_fixups=blob_fixups,
     lib_fixups=lib_fixups,

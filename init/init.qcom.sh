@@ -463,3 +463,25 @@ case "$buildvariant" in
         echo "4 4 1 4" > /proc/sys/kernel/printk
         ;;
 esac
+
+#enable coresight for diag_mdlog_system over qdss
+chown -h root.oem_2902 /sys/devices/platform/soc/10048000.tmc/coresight-tmc-etr/block_size
+chmod 660 /sys/devices/platform/soc/10048000.tmc/coresight-tmc-etr/block_size
+chown -h root.oem_2902 /sys/bus/coresight/reset_source_sink
+chmod 220 /sys/bus/coresight/reset_source_sink
+
+# qcom case 05386569
+mkdir /config/stp-policy/coresight-stm:p_ost.policy
+chmod 660 /config/stp-policy/coresight-stm:p_ost.policy
+mkdir /config/stp-policy/coresight-stm:p_ost.policy/default
+chmod 660 /config/stp-policy/coresight-stm:p_ost.policy/default
+echo 0x10 > /sys/bus/coresight/devices/coresight-stm/traceid
+
+# disable ftrace log on coresight stm buffer 
+case "$buildvariant" in
+    "eng")
+        echo 0 > /sys/bus/coresight/devices/coresight-stm/port_enable
+        echo 0x10000003 > /sys/bus/coresight/devices/coresight-stm/port_select
+        echo 0xffffffff > /sys/bus/coresight/devices/coresight-stm/port_enable
+        ;;
+esac

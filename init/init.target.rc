@@ -26,9 +26,10 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
+# Changes from Qualcomm Innovation Center are provided under the following
+# license:
 #
-# Changes from Qualcomm Innovation Center are provided under the following license:
-# Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+# Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted (subject to the limitations in the
@@ -42,8 +43,8 @@
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.
 #
-#     * Neither the name of Qualcomm Innovation Center, Inc. nor the names of
-#       its contributors may be used to endorse or promote products derived
+#     * Neither the name of Qualcomm Innovation Center, Inc. nor the names of its
+#       contributors may be used to endorse or promote products derived
 #       from this software without specific prior written permission.
 #
 # NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
@@ -59,6 +60,7 @@
 # IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 
 import /vendor/etc/init/hw/init.qti.kernel.rc
 
@@ -72,57 +74,40 @@ on early-init
     write /proc/sys/kernel/printk_devkmsg ratelimited
     export MEMTAG_OPTIONS off
 
-    # foreground-boost
+on init
+#fg opt enable
     mkdir /dev/cpuctl/foreground-boost
     chown system system /dev/cpuctl/foreground-boost
     chown system system /dev/cpuctl/foreground-boost/tasks
     chmod 0664 /dev/cpuctl/foreground-boost/tasks
+    write /dev/cpuctl/foreground-boost/cpu.rt_runtime_us 950000
     chown system system /dev/cpuctl/foreground-boost/cgroup.procs
     chmod 0664 /dev/cpuctl/foreground-boost/cgroup.procs
-    chown root system /dev/cpuctl/foreground-boost/cpu.shares
-    chmod 0664 /dev/cpuctl/foreground-boost/cpu.shares
 
-    # set property to boost-optimize
-    setprop sys.perf.boostopt true
-    # set property to animation vi boost
-    setprop sys.perf.viboost true
-
-    # midground set
-    mkdir /dev/cpuset/midground
-    copy /dev/cpuset/cpus /dev/cpuset/midground/cpus
-    copy /dev/cpuset/mems /dev/cpuset/midground/mems
-    chown root system /dev/cpuset/midground/cgroup.procs
-    chmod 0664 /dev/cpuset/midground/cgroup.procs
-    chown root system /dev/cpuset/midground/cpus
-    chmod 0664 /dev/cpuset/midground/cpus
-    write /dev/cpuset/midground/cpus 0-1,5-6
-
-on init
-    wait /dev/block/platform/soc/${ro.boot.bootdevice}
-    symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
-    chown system system /sys/devices/platform/soc/1d84000.ufshc/auto_hibern8
-    chmod 0660 /sys/devices/platform/soc/1d84000.ufshc/auto_hibern8
-    start logd
-
-    mkdir /dev/cpuctl/general
-    copy_per_line /dev/cpuctl/tasks /dev/cpuctl/general/tasks
-    chown system system /dev/cpuctl/general
-    chown system system /dev/cpuctl/general/tasks
-    chmod 0644 /dev/cpuctl/general/tasks
-    chown system system /dev/cpuctl/general/cpu.shares
-    chmod 0644 /dev/cpuctl/general/cpu.shares
-
+# foreground-boost
     mkdir /dev/cpuset/foreground-boost
     copy /dev/cpuset/cpus /dev/cpuset/foreground-boost/cpus
     copy /dev/cpuset/mems /dev/cpuset/foreground-boost/mems
     chown system system /dev/cpuset/foreground-boost
     chown system system /dev/cpuset/foreground-boost/tasks
     chmod 0664 /dev/cpuset/foreground-boost/tasks
-    chown system system /dev/cpuset/foreground-boost/cgroup.procs
+	chown system system /dev/cpuset/foreground-boost/cgroup.procs
     chmod 0664 /dev/cpuset/foreground-boost/cgroup.procs
 
-    chown system system /dev/cpuset/restricted/cpus
-    chmod 0664 /dev/cpuset/restricted/cpus
+    chown system system /dev/cpuset/foreground/cpus
+    chown system system /dev/cpuset/foreground-boost/cpus
+    chmod 0664 /dev/cpuset/foreground/cpus
+    chmod 0664 /dev/cpuset/foreground-boost/cpus
+
+# set property to boost-optimize
+    setprop sys.perf.boostopt true
+
+
+    wait /dev/block/platform/soc/${ro.boot.bootdevice}
+    symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
+    chown system system /sys/devices/platform/soc/1d84000.ufshc/auto_hibern8
+    chmod 0660 /sys/devices/platform/soc/1d84000.ufshc/auto_hibern8
+    start logd
 
 on early-fs
     start vold
@@ -133,20 +118,17 @@ on fs
     chown root system /mnt/vendor/persist
     chmod 0771 /mnt/vendor/persist
     restorecon_recursive /mnt/vendor/persist
-    mkdir /mnt/vendor/persist/secnvm 0770 system system
     mkdir /mnt/vendor/persist/data 0700 system system
 
-on post-fs && property:ro.boot.factory.interposer=0
-#    #Execute virtualization manager
-    enable vendor.qvirtservice_rs
-    start  vendor.qvirtservice_rs
+on fs && property:ro.boot.product.vendor.sku=taro
+
+on post-fs
     # set RLIMIT_MEMLOCK to 64MB
-     setrlimit 8 67108864 67108864
-    #Execute virtualization manager
-#     enable vendor.qvirtservice
-#     start  vendor.qvirtservice
+    setrlimit 8 67108864 67108864
 
 on late-fs
+    wait_for_prop hwservicemanager.ready true
+    #exec_start wait_for_keymaster
     mount_all /vendor/etc/fstab.qcom --late
 
 on post-fs-data
@@ -155,10 +137,11 @@ on post-fs-data
     write /sys/kernel/cnss/fs_ready 1
 
 on early-boot
+    start vendor.sensors
     verity_update_state
 
 on boot
-    write /dev/cpuset/audio-app/cpus 0-1
+    write /dev/cpuset/audio-app/cpus 1-2
     # Add a cpuset for the camera daemon
     # We want all cores for camera
     mkdir /dev/cpuset/camera-daemon
@@ -171,23 +154,88 @@ on boot
     chmod 0660 /sys/devices/platform/soc/990000.i2c/i2c-0/0-0038/trusted_touch_enable
     chown system /sys/devices/platform/soc/990000.spi/spi_master/spi0/spi0.0/trusted_touch_enable
     chmod 0660 /sys/devices/platform/soc/990000.spi/spi_master/spi0/spi0.0/trusted_touch_enable
+    chown system /sys/devices/platform/soc/980000.i2c/i2c-0/0-0062/trusted_touch_enable
+    chmod 0660 /sys/devices/platform/soc/980000.i2c/i2c-0/0-0062/trusted_touch_enable
+    chown system /sys/devices/platform/soc/980000.i2c/i2c-0/0-0062/trusted_touch_event
+    chmod 0660 /sys/devices/platform/soc/980000.i2c/i2c-0/0-0062/trusted_touch_event
     chown system /sys/devices/system/cpu/hyp_core_ctl/enable
     chown system /sys/devices/system/cpu/hyp_core_ctl/hcc_min_freq
+    #USB controller configuration
+    setprop vendor.usb.controller a600000.dwc3
+
+    # change owner and permission for hyper
+    chmod 0664 /sys/devices/system/cpu/bus_dcvs/DDR/boost_freq
+    chown root system /sys/devices/system/cpu/bus_dcvs/DDR/boost_freq
+    chmod 0664 /sys/devices/system/cpu/bus_dcvs/L3/boost_freq
+    chown root system /sys/devices/system/cpu/bus_dcvs/L3/boost_freq
+    chmod 0664 /sys/devices/system/cpu/bus_dcvs/DDR/soc:qcom,memlat:ddr:prime-latfloor/ipm_ceil
+    chown root system /sys/devices/system/cpu/bus_dcvs/DDR/soc:qcom,memlat:ddr:prime-latfloor/ipm_ceil
+
+    # change owner and permission for hyper
+    chown root system /proc/perf_reserve
+    chmod 0664 /proc/perf_reserve
+    chown root system /sys/devices/platform/soc/soc:aop-sysfs-msg-client/aop_send_message
+    chmod 0660 /sys/devices/platform/soc/soc:aop-sysfs-msg-client/aop_send_message
 
     # set cpuset value by performance team
-	write /dev/cpuset/foreground/cpus 0-6
-    write /dev/cpuset/foreground-boost/cpus 0-7
-    write /dev/cpuset/sf/cpus 0-1,5-6
+    write /dev/cpuset/top-app/cpus 0-7
+    write /dev/cpuset/foreground/cpus 0-7
+    write /dev/cpuset/background/cpus 0-2
+    write /dev/cpuset/system-background/cpus 0-2
+    write /dev/cpuset/restricted/cpus 0-2
+    write /dev/cpuset/audio-app/cpus 0-3
+    write /dev/cpuset/sf/cpus 0-6
+    write /dev/cpuset/foreground-boost 0-7
 
-# HyPer Permission
+    # System Performance TA Booster Permission
     chown root system /dev/cpuctl/top-app/cpu.uclamp.min
     chmod 0664 /dev/cpuctl/top-app/cpu.uclamp.min
-    chown root system /sys/devices/system/cpu/bus_dcvs/DDR/memlat/adaptive_low_freq
-    chmod 0664 /sys/devices/system/cpu/bus_dcvs/DDR/memlat/adaptive_low_freq
-    chown root system /sys/devices/system/cpu/bus_dcvs/DDR/memlat/adaptive_high_freq
-    chmod 0664 /sys/devices/system/cpu/bus_dcvs/DDR/memlat/adaptive_high_freq
-    chown root system /sys/devices/system/cpu/bus_dcvs/DDR/soc:qcom,memlat:ddr:prime-latfloor/max_freq
-    chmod 0664 /sys/devices/system/cpu/bus_dcvs/DDR/soc:qcom,memlat:ddr:prime-latfloor/max_freq
+    
+    chown root system dev/cpuset/restricted/cpus
+    chmod 0664 /dev/cpuset/restricted/cpus
+
+	# SM8450 thermal control zone
+	# thermal_zone33/type:cpuss-0
+	# thermal_zone34/type:cpuss-1
+	# thermal_zone35/type:cpuss-2
+	# thermal_zone36/type:cpuss-3
+	# thermal_zone37/type:cpu-1-0
+	# thermal_zone38/type:cpu-1-1
+	# thermal_zone39/type:cpu-1-2
+	# thermal_zone40/type:cpu-1-3
+	# thermal_zone41/type:cpu-1-4
+	# thermal_zone42/type:cpu-1-5
+	# thermal_zone43/type:cpu-1-6
+	# thermal_zone44/type:cpu-1-7
+	# thermal_zone45/type:cpu-1-8
+
+	chown root system /sys/devices/virtual/thermal/thermal_zone33/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone34/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone35/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone36/trip_point_2_temp
+    chown root system /sys/devices/virtual/thermal/thermal_zone37/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone38/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone39/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone40/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone41/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone42/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone43/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone44/trip_point_2_temp
+	chown root system /sys/devices/virtual/thermal/thermal_zone45/trip_point_2_temp
+
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone33/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone34/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone35/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone36/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone37/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone38/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone39/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone40/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone41/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone42/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone43/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone44/trip_point_2_temp
+	chmod 0660 /sys/devices/virtual/thermal/thermal_zone45/trip_point_2_temp
 
 # For CDSP crash
 on property:ro.boot.debug_level=0x494d
@@ -200,15 +248,13 @@ on property:vendor.display.lcd_density=560
 on property:vendor.display.lcd_density=640
    setprop dalvik.vm.heapgrowthlimit 512m
 
-on init && property:ro.boot.mode=charger
-    wait_for_prop vendor.all.modules.ready 1
-    mount_all /vendor/etc/charger_fw_fstab.qti --early
-    wait /sys/kernel/boot_adsp/boot
-    write /sys/kernel/boot_adsp/boot 1
-
 on charger
-    start vendor.power_off_alarm
+    setprop sys.usb.controller a600000.dwc3
+    wait /sys/class/udc/${sys.usb.controller}
+    setprop sys.usb.configfs 1
     write /sys/kernel/cnss/charger_mode 1
+    wait /dev/block/bootdevice/by-name/apnhlos
+    mount vfat /dev/block/bootdevice/by-name/apnhlos /vendor/firmware_mnt ro noatime context=u:object_r:firmware_file:s0,shortname=lower,uid=0,gid=1000,dmask=227,fmask=337
 
 #service vendor.lowi /vendor/bin/sscrpcd
 #   class core
@@ -235,10 +281,10 @@ service vendor.per_proxy /vendor/bin/pm-proxy
     group system
     disabled
 
-#service vendor.mdm_helper /vendor/bin/mdm_helper
-#    class core
-#    group system wakelock
-#    disabled
+service vendor.mdm_helper /vendor/bin/mdm_helper
+    class core
+    group system wakelock
+    disabled
 
 service vendor.mdm_launcher /vendor/bin/sh /vendor/bin/init.mdm.sh
     class core
@@ -255,14 +301,17 @@ on early-boot && property:persist.vendor.pcie.boot_option=*
     write /sys/bus/platform/devices/1c00000.qcom,pcie/debug/boot_option ${persist.vendor.pcie.boot_option}
     write /sys/bus/platform/devices/1c08000.qcom,pcie/debug/boot_option ${persist.vendor.pcie.boot_option}
 
-service fan_control_turn_on /vendor/bin/fan_service 1
-    class late_start
-    user root
-    disabled
-    oneshot
+on property:sys.boot_completed=1
+    enable vendor.qvirtmgr
+    start  vendor.qvirtmgr
 
-service fan_control_turn_off /vendor/bin/fan_service 0
-    class late_start
-    user root
-    disabled
-    oneshot
+on property:service.camera.running=1
+    setprop sys.sysctl.extra_free_kbytes 25000
+    setprop sys.sysctl.watermark_boost_factor 15000
+    setprop sys.sysctl.swappiness 100
+		
+on property:service.camera.running=0
+    setprop sys.sysctl.watermark_boost_factor 0
+    setprop sys.sysctl.extra_free_kbytes ${sys.sysctl.origin_extra_free_kbytes}
+    setprop sys.sysctl.swappiness 130
+

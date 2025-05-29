@@ -6,4 +6,3 @@ on late-init
     chmod 0440 /sys/class/sec/sec_detect_conn/connector_count
     chown system system /sys/class/sec/sec_detect_conn/connector_disconnected_count
     chmod 0600 /sys/class/sec/sec_detect_conn/connector_disconnected_count
-
